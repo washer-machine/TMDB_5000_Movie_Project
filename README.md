@@ -1,6 +1,8 @@
 # TMDB_5000_Movie_Project
 DS 202 Final Project
 
+![The Godfather]<https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SY1000_CR0,0,704,1000_AL_.jpg>
+
 1. Lynn Hyuang, Prateek Oberoi, Aisha Washington  
 2. We are working with TMDB_5000_Movie Dataset from The Movie Database.  There are two tables: One with information on various aspects of movies such as an identifier number for each movie, the title, the cast, and the crew; the second with information on the budget, genres,revenue, and other items specific to the movie's audience facing perception.  
 3. Selecting variables of interest: We can use select statements in order to work with only the factors that we're interested in.    
