@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 
 credits <- read.csv('tmdb_5000_credits.csv')
-head(credits)
+str(credits)
 
 movies <- read.csv('tmdb_5000_movies.csv')
 str(movies)
@@ -25,10 +25,18 @@ str(movies)
 credits1 <- credits %>% separate(cast, into = c('cast1','cast2','cast3','cast4','cast5'), sep = '\\}, \\{')
 credits1$cast1 %>% head()
 
-sub("(\\[\\{)*\"cast_id\": \\d+, \"character\": \"(\\w+ ?\\w+? ?)+\", \"credit_id\": \"\\w+\", \"gender\": \\12, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": 0", "\\3", credits1$cast1) %>% head()
+sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast2) %>% head()
+
+credits1$cast1 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast1)
+credits1$cast2 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast2)
+credits1$cast3 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast3)
+credits1$cast4 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast4)
+credits1$cast5 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast5)
 
 credits %>% select(cast) %>% head()
 ```
+
+Separate Genre into `genre1`, `genre2`, `genre3`
 
 ```{r}
 movies1 <- movies %>% separate(genres, into = c('genre1','genre2','genre3'), sep = '\\}, \\{')
