@@ -47,7 +47,6 @@ credits1$cast3 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)
 credits1$cast4 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast4)
 credits1$cast5 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast5)
 
-credits1
 write.csv(credits1, 'credits_separated.csv')
 ```
 
@@ -82,5 +81,5 @@ movies4 <- movies3 %>% separate(spoken_languages, into = 'main_language', sep = 
 
 movies4$main_language <- sub('\\[\\{"iso_639_1": "(\\w+)", "name": "\\w+(?:.+)?"(?:\\}\\])?', '\\1', movies4$main_language)
 
-movies4 %>% head()
+write.csv(movies4, 'movies_separated.csv')
 ```
