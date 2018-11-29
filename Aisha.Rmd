@@ -10,44 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Sumbission 1
-
-```{r}
-library(tidyverse)
-
-credits <- read.csv('tmdb_5000_credits.csv')
-str(credits)
-
-movies <- read.csv('tmdb_5000_movies.csv')
-str(movies)
-```
-
-```{r}
-credits1 <- credits %>% separate(cast, into = c('cast1','cast2','cast3','cast4','cast5'), sep = '\\}, \\{')
-credits1$cast1 %>% head()
-
-sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast2) %>% head()
-
-credits1$cast1 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast1)
-credits1$cast2 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast2)
-credits1$cast3 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast3)
-credits1$cast4 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast4)
-credits1$cast5 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\", \"order\": \\d", "\\1", credits1$cast5)
-
-credits %>% select(cast) %>% head()
-```
-
-Separate Genre into `genre1`, `genre2`, `genre3`
-
-```{r}
-movies1 <- movies %>% separate(genres, into = c('genre1','genre2','genre3'), sep = '\\}, \\{')
-
-movies1$genre1 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\])?", '\\2', movies1$genre1)
-movies1$genre2 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\])?", '\\2', movies1$genre2)
-movies1$genre3 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\])?", '\\2', movies1$genre3)
-```
-
-
-
 1. The names of all team members that worked on the document.
 2. An overview of the data set you are working with for the final project
 3. A discussion of cleaning steps that are necessary to get the data into the right shape
@@ -59,3 +21,66 @@ movies1$genre3 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\]
 3. Selecting variables of interest: We can use select statements in order to work with only the factors that we're interested in.    
    Separating genres and keywords from filler text: Since the genre and keyword categories are often different for each observation, we can use regular expressions in order to create a genereal formula for what needs to be removed, select variables of interest
    
+# Separate Dense Variables
+
+```{r}
+library(tidyverse)
+
+credits <- read.csv('tmdb_5000_credits.csv')
+str(credits)
+
+movies <- read.csv('tmdb_5000_movies.csv')
+str(movies)
+```
+
+### Clean Credits
+
+- Seperate credits into `cast1` - `cast5`
+```{r}
+credits1 <- credits %>% 
+  select(-crew) %>%
+  separate(cast, into = c('cast1','cast2','cast3','cast4','cast5'), sep = '\\}, \\{')
+
+credits1$cast1 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast1)
+credits1$cast2 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast2)
+credits1$cast3 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast3)
+credits1$cast4 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast4)
+credits1$cast5 <- sub("(?:\\[\\{)?\"cast_id\": \\d+, \"character\": \"\\w+(?:..)*(?: \\w+)*\", \"credit_id\": \"\\w+\", \"gender\": \\d, \"id\": \\d+, \"name\": \"(\\w+(?:..)*(?: \\w+.))*\", \"order\": \\d", "\\1", credits1$cast5)
+
+credits1
+write.csv(credits1, 'credits_separated.csv')
+```
+
+### Clean Movies
+
+- Separate Genre into `genre1`, `genre2`, `genre3`
+- Create `main_production`, `main_country`, `main_language`
+```{r}
+# Select  variables of interest / capture first 3 genres
+movies1 <- movies %>% 
+  select(budget, genres, original_title, popularity, production_companies, production_countries, release_date, revenue, runtime, spoken_languages, vote_average, vote_count) %>% 
+  separate(genres, into = c('genre1','genre2','genre3'), sep = '\\}, \\{')
+
+movies1$genre1 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\])?", '\\2', movies1$genre1)
+movies1$genre2 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\])?", '\\2', movies1$genre2)
+movies1$genre3 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\])?", '\\2', movies1$genre3)
+
+# Capture first production company
+movies2 <- movies1 %>% 
+  separate(production_companies, into = c('main_production'), sep = '\\}, \\{') 
+
+movies2$main_production <- sub("\\[\\{\"name\": \"(\\w+(?: \\w+.)*)\", \"id\": \\d+", '\\1', movies2$main_production)
+
+# Capture first production countries
+movies3 <- movies2 %>% 
+  separate(production_countries, into = c('main_country'), sep = '\\}, \\{')
+
+movies3$main_country <-sub("\\[\\{\"iso_3166_1\": \"\\w+\", \"name\": \"(\\w+(?: \\w+.)*)\"(?:\\}\\])?", '\\1', movies3$main_country)
+
+# Capture first language
+movies4 <- movies3 %>% separate(spoken_languages, into = 'main_language', sep = '\\}, \\{')
+
+movies4$main_language <- sub('\\[\\{"iso_639_1": "(\\w+)", "name": "\\w+(?:.+)?"(?:\\}\\])?', '\\1', movies4$main_language)
+
+movies4 %>% head()
+```
