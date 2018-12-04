@@ -25,6 +25,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(stringr)
+library(ggplot2)
 
 credits <- read.csv('tmdb_5000_credits.csv')
 str(credits)
@@ -54,6 +56,7 @@ write.csv(credits1, 'credits_separated.csv')
 
 - Separate Genre into `genre1`, `genre2`, `genre3`
 - Create `main_production`, `main_country`, `main_language`
+- Scale `budget` and `revenue` to be per million
 ```{r}
 # Select  variables of interest / capture first 3 genres
 movies1 <- movies %>% 
@@ -68,7 +71,8 @@ movies1$genre3 <- sub("(\\[\\{)?\"id\": \\d+, \"name\": \"(\\w+ ?\\w+?)\"(\\}\\]
 movies2 <- movies1 %>% 
   separate(production_companies, into = c('main_production'), sep = '\\}, \\{') 
 
-movies2$main_production <- sub("\\[\\{\"name\": \"(\\w+(?: \\w+.)*)\", \"id\": \\d+", '\\1', movies2$main_production)
+movies2$main_production <- sub("\\[\\{\"name\": \"(\\w+.\\w+(?:.+)*)\", \"id\": \\d+", '\\1', movies2$main_production)
+movies2$main_production <- str_remove_all(movies2$main_production, '\\}\\]')
 
 # Capture first production countries
 movies3 <- movies2 %>% 
@@ -79,7 +83,162 @@ movies3$main_country <-sub("\\[\\{\"iso_3166_1\": \"\\w+\", \"name\": \"(\\w+(?:
 # Capture first language
 movies4 <- movies3 %>% separate(spoken_languages, into = 'main_language', sep = '\\}, \\{')
 
-movies4$main_language <- sub('\\[\\{"iso_639_1": "(\\w+)", "name": "\\w+(?:.+)?"(?:\\}\\])?', '\\1', movies4$main_language)
+movies4$main_language <-sub('\\[\\{"iso_639_1": "(\\w{2})", "name": ".*"(?:\\}\\])?', '\\1', movies4$main_language)
 
+# Scale Budget and Revenue to Per Million (Remove)
+movies4$budget <- movies4$budget / 10^6
+movies4$revenue <- movies4$revenue / 10^6
+
+str(movies4)
 write.csv(movies4, 'movies_separated.csv')
 ```
+
+# Analysis
+
+- Are there any production companies that have higher budgets than others, on average?  
+- If so , how do their movies compare in terms and `revenue`?
+
+```{r}
+mov <- read.csv('movies_separated.csv')
+mov <- mov %>% filter(budget > 0)
+#mov %>% head()
+```
+
+```{r echo=FALSE}
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), revenue = mean(revenue)) %>% 
+  ggplot(aes(x = avbudget, y = revenue)) +
+  geom_point() +
+  xlab('Average Budget (in Millions of Dollars)') +
+  ylab('Average Revenue (in Millions of Dallars)')
+```
+
+Above we have a scatter plot of average budget against the average revenue for each production company.  As the budget increases, so does the expected revenue.  However as the budget increase, the variance in returns also increases. Mega movies, defined as movies with budgets greater than $100 million, have potential to earn much higher profits, however they also have potential for higher losses.   
+
+### *High Budget Production Companies*
+```{r echo=FALSE}
+# Mega Movie Production Houses ($100M + Budget)
+# https://www.investopedia.com/financial-edge/0611/why-movies-cost-so-much-to-make.aspx
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), revenue = mean(revenue)) %>% 
+  filter(avbudget > 100) %>% 
+  ggplot(aes(x = main_production)) +
+  geom_bar(aes(weight = revenue)) +
+  geom_bar(aes(weight = avbudget, 
+               fill = 'red', 
+               alpha = 0.5)) +
+  theme(legend.position = 'none',
+        axis.title.y = element_blank()) +
+  ylab('Average Budget(red) & Revenue(black)') +
+  coord_flip()
+```
+
+There are 17 production companies that have the average buget of a mega movie.  On average, all but one of them make more than they spend in revenue.  
+
+```{r echo=FALSE}
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), revenue = mean(revenue)) %>% 
+  filter(avbudget > 100) %>% 
+  ggplot(aes(x = avbudget, y = revenue)) +
+  geom_point() +
+  xlab('Average Budget (in Millions of Dollars)') +
+  ylab('Average Revenue (in Millions of Dallars)')
+```
+
+Of the mega movie production companies, after spending $100 million on a project, there is no impact on revenue. There may be a small positive relationship between budget and revenue, but it is masked by the variance.  
+
+### *Average Budget Production Companies*
+```{r echo=FALSE}
+# Average Movie Production Houses ($29M Budget)
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), 
+            revenue = mean(revenue)) %>% 
+  filter(avbudget > mean(avbudget) - .4, 
+         avbudget < mean(avbudget) + .4) %>% 
+  ggplot(aes(x = main_production)) +
+  geom_bar(aes(weight = revenue)) +
+  geom_bar(aes(weight = avbudget, 
+               fill = 'red', 
+               alpha = 0.5)) +
+  theme(legend.position = 'none',
+        axis.title.y = element_blank()) +
+  ylab('Average Budget(red) & Revenue(black)') +
+  coord_flip()
+```
+
+We are defining production companies that spend between \$36.8M and \$37.4M as average spenders.  There are 6 companies that meet this criteria.  Again, all but one of these companies, on average, have higher revenue than their budget.  Despite having similar budgets, these companies have quite different revenues.  
+
+```{r echo=FALSE}
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), 
+            revenue = mean(revenue)) %>% 
+  filter(avbudget > mean(avbudget) - .4, 
+         avbudget < mean(avbudget) + .4) %>% 
+  ggplot(aes(x = avbudget, y = revenue)) +
+  geom_point() +
+  xlab('Average Budget (in Millions of Dollars)') +
+  ylab('Average Revenue (in Millions of Dallars)')
+```
+
+We have fewer companies shown than in the mega movie category.  There appears to be a slight positive relationship between budget and revenue.  
+
+### *Low Budget Production Companies*
+```{r echo=FALSE}
+# Low Budget Movie Production Houses (< $250K Budget)
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), revenue = mean(revenue)) %>% 
+  filter(avbudget > .1, avbudget < .25) %>% 
+  ggplot(aes(x = main_production)) +
+  geom_bar(aes(weight = revenue)) +
+  geom_bar(aes(weight = avbudget, 
+               fill = 'red', 
+               alpha = 0.5)) +
+  theme(legend.position = 'none',
+        axis.title.y = element_blank()) +
+  ylab('Average Budget(red) & Revenue(black)') +
+  coord_flip()
+
+mov %>% group_by(main_production) %>% 
+  summarise(avbudget = mean(budget), revenue = mean(revenue)) %>% 
+  filter(avbudget > .1, avbudget < .25) %>% 
+  ggplot(aes(x = avbudget, y = revenue)) +
+  geom_point() +
+  xlab('Average Budget (in Millions of Dollars)') +
+  ylab('Average Revenue (in Millions of Dallars)')
+```
+
+There are 14 low budget films, defined as movies with budgets below $250,000.  Of these production companies they mostly have much higher revenues than the movies cost to produce.  Orsey Films, Kibble, FallsApart, Apostle, and Allagash Films have revenues close to the budget (or below).  
+
+### Compare Mega, Average, and Low Budget Production Companies
+```{r}
+# Subset Budget groups
+highsub <- mov %>% filter(main_production %in% c('1492 Pictures', 'Anarchos Productions', 'DC Comics', 'De Line Pictures', 'DreamWorks Animation', 'Legendary Pictures', 'Marvel Studios', 'Mid Atlantic Films', 'One Race Films', 'Pacific Data Images', 'Patalex IV Productions Limited', 'Todman, Simon, LeMasters Productions', 'Walt Disney Animation Studios', 'Walt Disney', 'WingNut Films')) %>% mutate(sub = 'High')
+
+avgsub <- mov %>% filter(main_production %in% c('Working Title Films', 'Wild Bunch', 'This Is That Productions','River Road Entertainment', 'Production One', 'Paul Schiff Productions', 'Participant Media', 'Mike Zoss Productions', 'Metro-Goldwyn-Mayer (MGM)', 'Ghost House Pictures')) %>% mutate(sub = 'Average')
+
+lowsub <- mov %>% filter(main_production %in% c('Yeah', 'The Institute for the Intellectual Development of Children & Young Adults', 'Plunge Pictures LLC', 'Orsay Films', 'Laurel Group', 'Kibble Productions', 'Jack Dietz Productions', 'IFC Productions', 'IDG China Media', 'GraceWorks Pictures', 'FallsApart Productions', 'Apostle Productions', 'Allagash Films', 'Ada Films')) %>% mutate(sub = 'Low')
+
+# Create return on investment metric (revenue/budget)
+sub <- rbind(highsub, avgsub, lowsub) %>% 
+  mutate(return = revenue/budget) %>% 
+  select(sub, original_title, main_production, budget, revenue, return)
+sub$sub <- factor(sub$sub, levels = c('High', 'Average', 'Low'))
+```
+
+```{r}
+sub %>% group_by(sub) %>% 
+  summarise(return = mean(return), rev = mean(revenue)) 
+```
+
+1: Mega budget producers have the lowest return on investment.  However, since their starting budgets are so high, they still have the highest revenue of the 3 groups.  
+2: The average budget producers create movies with median returns and revenues.  
+3: Low budget producers have the highest return on investment but the lowest revenues.  
+
+```{r echo=FALSE}
+sub %>% ggplot(aes(x = budget, y = revenue)) +
+  geom_point(aes(color = sub))+
+  xlab('Budget (in Millions of Dollars)') +
+  ylab('Revenue (in Millions of Dallars)')
+```
+
+If the goal is to have the highest revenue, then a mega producer will churn out the highest.  However for the highest return, low budget films are more effective.
